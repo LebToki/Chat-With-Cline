@@ -1,67 +1,55 @@
+# Chat With Cline (Mission Control)
 
-# Chat With Cline | Mission Control 🚀
-### The Definitive Web Dashboard for Autonomous Agent Orchestration
+A "Mission Control" dashboard for the [Cline CLI](https://docs.cline.bot/cline-cli) that orchestrates autonomous AI agents via a beautiful, glassmorphic web interface.
 
-[![Author](https://img.shields.io/badge/Author-Tarek%20Tarabichi-blue?style=for-the-badge)](https://2tinteractive.com)
-[![Version](https://img.shields.io/badge/Version-1.2.0-blue?style=for-the-badge)](#)
+![Mission Control](https://via.placeholder.com/1200x600/050505/3b82f6?text=Chat+With+Cline+Mission+Control)
 
-**Chat With Cline** is a world-class command center designed for the [Cline CLI](https://docs.cline.bot). It transitions raw terminal agentic logic into a high-end visual dashboard, enabling you to build and manage your own **Virtual AI Team**.
+## Features
 
----
+- **Virtual Team Orchestration**: Spawn specialized agents (e.g., "Frontend Architect", "Security Auditor") with distinct configurations.
+- **Real-time Terminal**: Integrated `xterm.js` terminal streaming direct output from the `cline` CLI.
+- **Visual Context**: Drag-and-drop file uploads and context synchronization.
+- **Persistent Memory**: "Rules" and "Skills" persistence to guide agent behavior.
 
-## 🎨 Design Philosophy
-Developed as a "Tactical Command Center", this dashboard emphasizes architectural clarity and the ability to deploy specialized "Expert Instances" for complex software projects.
+## Architecture
 
----
+This project uses a **Client-Server** architecture:
+- **Frontend**: React (Vite) + Tailwind CSS + Socket.io Client.
+- **Backend**: Node.js + Express + Socket.io + node-pty.
 
-## 🛠 Features (v1.2.0 - Advanced Team Builder)
+## Getting Started
 
-### 1. Virtual Team Orchestration
-- **Expert Configuration**: Deploy specialized roles (e.g., "Frontend Architect", "Security Auditor") using a robust deployment form. Configure Provider, Model, Temperature, and Base URLs individually.
-- **Expert Renaming**: Double-click any agent tab to rename roles on the fly.
-- **Multi-Agent Persistence**: Your entire team, their message history, and their specialized configurations are automatically saved to `localStorage`. Refresh without losing your "Neural Employees".
+### Prerequisites
 
-### 2. Status Telemetry & Real-time Monitoring
-- **Visual Indicators**: Dynamic headers featuring specialized status dots:
-  - 🟢 **Online**: Ready for directives.
-  - 🔵 **Busy (Pulsing)**: Neural processing in progress.
-  - 🔴 **Error (Flashing)**: System failure or API blockage.
-  - 🔘 **Offline**: Internal disconnect.
+1.  **Cline CLI**: Must be installed globally.
+    ```bash
+    npm install -g cline
+    ```
+2.  **Node.js**: v18+ recommended.
 
-### 3. Tactical Cognitive Layers
-- **Rules Tab**: Define persistent behavioral constraints across your project.
-- **Skills Matrix**: Enable or disable specialized capabilities like *Scraping*, *DevOps*, and *Unit Testing*.
-- **Integrated Terminal**: Execute and monitor commands directly from the dashboard.
+### Installation
 
----
+1.  Clone the repository.
+2.  Install dependencies (for both frontend and backend).
+    ```bash
+    npm install
+    ```
+3.  Create a `.env` file (see `.env.example`).
+    ```bash
+    cp .env.example .env
+    ```
 
-## 📜 Usage & Persistence
+### Running the App
 
-The "Chat With Cline" interface is built for longevity. All configurations, including:
-- **Agents & Their Roles**
-- **Project Rules**
-- **Task Lists**
-- **Active Skills**
+Start both the backend server and frontend client with one command:
 
-Are persisted locally. This allows you to build a complex project structure and return to it exactly where you left off, with your specialized virtual team ready to execute.
+```bash
+npm start
+```
 
----
+- **Frontend**: Open [http://localhost:3000](http://localhost:3000)
+- **Backend API**: Running at [http://localhost:3001](http://localhost:3001)
 
-## 📜 Installation
+## License
 
-1. **Prerequisite**: Ensure the [Cline CLI](https://docs.cline.bot/cline-cli/installation) is installed globally.
-2. **Key Config**: Export your provider keys (e.g., `CLINE_API_KEY`).
-3. **Local Providers**: Full support for `Ollama` and `LM Studio` via the tactical deployment matrix.
-
----
-
-## 🔒 License & Copyright
-
-Copyright © 2025 Tarek Tarabichi (2tinteractive.com).
-
-**Branded Open Source Terms:**
-- You may use, modify, and fork this repository.
-- **Strictly Prohibited**: Removal of "Tarek Tarabichi" or "2tinteractive.com" branding from the UI headers, meta-tags, or manifest files.
-- Contributions are welcome through PRs.
-
-*Elevate your workflow. Orchestrate your team.*
+MIT

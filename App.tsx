@@ -6,8 +6,8 @@ import ControlPanel from './components/ControlPanel';
 import Terminal from './components/Terminal';
 import NewAgentModal from './components/NewAgentModal';
 import { Icons } from './constants';
-import { Message, ProviderType, ToolCall, Task, ClineStatus, AgentInstance, Skill, MemoryEntry, Attachment, Rule, AgentConfig } from './types';
-import { GeminiAgent } from './services/geminiService';
+import { Message, ProviderType, Task, ClineStatus, AgentInstance, Skill, MemoryEntry, Attachment, Rule, AgentConfig } from './types';
+import { socketService } from './services/socketService';
 
 const App: React.FC = () => {
   // Global App State - Initializing from LocalStorage for persistence
@@ -22,22 +22,11 @@ const App: React.FC = () => {
         console.error("Failed to load agents", e);
       }
     }
-    return [{
-      id: 'default',
-      name: 'Architect 1',
-      status: 'online',
-      messages: [],
-      toolCalls: [],
-      config: {
-        provider: ProviderType.GEMINI,
-        model: 'gemini-2.5-flash-lite-latest',
-        temperature: 0.1
-      }
-    }];
+    return [];
   });
 
   const [activeAgentId, setActiveAgentId] = useState<string>(() => {
-    return localStorage.getItem('cline_active_agent_id') || 'default';
+    return localStorage.getItem('cline_active_agent_id') || '';
   });
 
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
@@ -49,13 +38,13 @@ const App: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeBottomTab, setActiveBottomTab] = useState<'terminal' | 'memory' | 'skills' | 'rules'>('terminal');
-  
+
   // Persistence states
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem('cline_tasks');
     return saved ? JSON.parse(saved) : [];
   });
-  
+
   const [rules, setRules] = useState<Rule[]>(() => {
     const saved = localStorage.getItem('cline_rules');
     return saved ? JSON.parse(saved) : [
@@ -79,13 +68,15 @@ const App: React.FC = () => {
     { id: 'm2', content: 'Project root is /workspace.', tags: ['infra'], timestamp: Date.now() }
   ]);
 
+  // Terminal output mapping: agentId -> string buffer
+  const [terminalOutputs, setTerminalOutputs] = useState<Record<string, string>>({});
+
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const agentRef = useRef<GeminiAgent | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const activeAgent = useMemo(() => 
+  const activeAgent = useMemo(() =>
     agents.find(a => a.id === activeAgentId) || agents[0]
-  , [agents, activeAgentId]);
+    , [agents, activeAgentId]);
 
   // Persistence Sync
   useEffect(() => {
@@ -109,28 +100,57 @@ const App: React.FC = () => {
   }, [skills]);
 
   useEffect(() => {
-    const apiKey = process.env.API_KEY;
-    if (apiKey) {
-      agentRef.current = new GeminiAgent(apiKey);
-    }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeAgent?.messages, isTyping]);
+
+  // Initial Load from Server
+  useEffect(() => {
+    socketService.listAgents().then(data => {
+      // Ideally merge with local state or just use server state
+      // For now, we assume local state is primary for config, 
+      // but we might want to reconcile.
+    });
   }, []);
 
+  // Socket Event Listeners
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeAgent.messages, isTyping]);
+    if (!activeAgentId) return;
 
-  const handleDeployAgent = (name: string, config: AgentConfig) => {
-    const newId = `agent-${Date.now()}`;
-    const newAgent: AgentInstance = {
-      id: newId,
-      name,
-      status: 'online',
-      messages: [],
-      toolCalls: [],
-      config
+    const handleOutput = (data: string) => {
+      setTerminalOutputs(prev => ({
+        ...prev,
+        [activeAgentId]: (prev[activeAgentId] || '') + data
+      }));
     };
-    setAgents(prev => [...prev, newAgent]);
-    setActiveAgentId(newId);
+
+    socketService.on(`agent:${activeAgentId}:output`, handleOutput);
+
+    return () => {
+      socketService.off(`agent:${activeAgentId}:output`, handleOutput);
+    };
+  }, [activeAgentId]);
+
+
+  const handleDeployAgent = async (name: string, config: AgentConfig) => {
+    try {
+      const response = await socketService.createAgent(name, config);
+
+      const newAgent: AgentInstance = {
+        id: response.agentId,
+        name,
+        status: 'online',
+        messages: [],
+        toolCalls: [],
+        config
+      };
+
+      setAgents(prev => [...prev, newAgent]);
+      setActiveAgentId(response.agentId);
+      setIsNewAgentModalOpen(false);
+    } catch (err) {
+      console.error("Failed to deploy agent", err);
+      // Show error notification
+    }
   };
 
   const startRenaming = (agent: AgentInstance) => {
@@ -140,7 +160,7 @@ const App: React.FC = () => {
 
   const handleRenameSubmit = () => {
     if (editingAgentId && editNameValue.trim()) {
-      setAgents(prev => prev.map(a => 
+      setAgents(prev => prev.map(a =>
         a.id === editingAgentId ? { ...a, name: editNameValue.trim() } : a
       ));
     }
@@ -159,6 +179,7 @@ const App: React.FC = () => {
     });
   };
 
+  // ... File Upload Logic (Keep existing) ...
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -186,7 +207,7 @@ const App: React.FC = () => {
   };
 
   const handleSend = async () => {
-    if (!inputValue.trim() || !agentRef.current) return;
+    if (!inputValue.trim() || !activeAgentId) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: inputValue, timestamp: Date.now() };
 
@@ -194,38 +215,19 @@ const App: React.FC = () => {
     setInputValue('');
     setIsTyping(true);
 
-    const assistantId = (Date.now() + 1).toString();
-    let assistantContent = '';
-
     try {
-      setAgents(prev => prev.map(a => a.id === activeAgentId ? { ...a, messages: [...a.messages, { id: assistantId, role: 'assistant', content: '', timestamp: Date.now() }] } : a));
+      await socketService.sendMessage(activeAgentId, inputValue);
 
-      const contextPrompt = rules.filter(r => r.enabled).map(r => `Rule: ${r.content}`).join('\n');
-      const messagesWithRules = [{ id: 'sys-rules', role: 'system' as const, content: contextPrompt, timestamp: 0 }, ...activeAgent.messages, userMsg];
+      // In a real CLI integration, the "Assistant" response is streaming text/json from stdout.
+      // We are monitoring stdout in the Terminal view.
+      // We can also parse it to show "Bubbles" if we want, but for now, let's assume
+      // the Terminal is the primary output, OR we detect JSON lines and render them as messages.
 
-      // Use active agent's config for generation
-      await agentRef.current.generateResponse(messagesWithRules, activeAgent.config, (chunk) => {
-        assistantContent += chunk;
-        setAgents(prev => prev.map(a => a.id === activeAgentId ? {
-          ...a,
-          messages: a.messages.map(m => m.id === assistantId ? { ...m, content: assistantContent } : m)
-        } : a));
-      });
-
-      const foundTools = agentRef.current.parseToolCalls(assistantContent);
-      if (foundTools.length > 0) {
-        setAgents(prev => prev.map(a => a.id === activeAgentId ? { ...a, toolCalls: [...a.toolCalls, ...foundTools] } : a));
-      }
     } catch (err) {
       console.error(err);
-      setAgents(prev => prev.map(a => 
-        a.id === activeAgentId ? { ...a, status: 'error' } : a
-      ));
+      setAgents(prev => prev.map(a => a.id === activeAgentId ? { ...a, status: 'error' } : a));
     } finally {
       setIsTyping(false);
-      setAgents(prev => prev.map(a => 
-        (a.id === activeAgentId && a.status !== 'error') ? { ...a, status: 'online' } : a
-      ));
     }
   };
 
@@ -239,13 +241,15 @@ const App: React.FC = () => {
     }
   };
 
+  if (!activeAgent && agents.length > 0) setActiveAgentId(agents[0].id);
+
   return (
     <div className="flex h-screen w-full bg-[#050505] overflow-hidden text-zinc-300 font-sans selection:bg-blue-500/30">
-      <Sidebar 
-        selectedProvider={activeAgent.config.provider}
+      <Sidebar
+        selectedProvider={activeAgent?.config.provider || ProviderType.GEMINI}
         setProvider={(p) => setAgents(prev => prev.map(a => a.id === activeAgentId ? { ...a, config: { ...a.config, provider: p } } : a))}
-        isSettingsOpen={false} 
-        setSettingsOpen={() => {}} 
+        isSettingsOpen={false}
+        setSettingsOpen={() => { }}
       />
 
       <FileExplorer />
@@ -256,7 +260,7 @@ const App: React.FC = () => {
             <Icons.Logo />
             <div className="h-6 w-[1px] bg-white/10 mx-2"></div>
             {agents.map(agent => (
-              <div 
+              <div
                 key={agent.id}
                 className={`group relative px-3 py-1.5 rounded-xl text-[11px] font-mono border transition-all whitespace-nowrap flex items-center gap-2.5 ${activeAgentId === agent.id ? 'bg-blue-600/10 border-blue-500/40 text-blue-400' : 'bg-transparent border-transparent text-zinc-500 hover:bg-white/5 cursor-pointer'}`}
                 onClick={() => activeAgentId !== agent.id && setActiveAgentId(agent.id)}
@@ -273,7 +277,7 @@ const App: React.FC = () => {
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <span 
+                  <span
                     onDoubleClick={(e) => { e.stopPropagation(); startRenaming(agent); }}
                     className="cursor-text select-none"
                     title="Double click to rename"
@@ -282,17 +286,17 @@ const App: React.FC = () => {
                   </span>
                 )}
                 {agents.length > 1 && (
-                  <button 
+                  <button
                     onClick={(e) => deleteAgent(e, agent.id)}
                     className="opacity-0 group-hover:opacity-40 hover:!opacity-100 transition-opacity ml-1 p-0.5 hover:bg-red-500/20 rounded"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                   </button>
                 )}
               </div>
             ))}
-            <button 
-              onClick={() => setIsNewAgentModalOpen(true)} 
+            <button
+              onClick={() => setIsNewAgentModalOpen(true)}
               className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 border border-white/5 transition-colors flex items-center gap-2 px-3 shrink-0 group active:scale-95"
             >
               <Icons.Plus />
@@ -300,26 +304,30 @@ const App: React.FC = () => {
             </button>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-             <div className="hidden md:flex flex-col items-end mr-4">
-                <span className="text-[9px] text-zinc-500 font-mono tracking-widest uppercase">Expertise</span>
-                <span className="text-[10px] text-blue-400 font-bold uppercase tracking-tighter">{activeAgent.name}</span>
-             </div>
-             <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 overflow-hidden shadow-lg shadow-black/50">
-                <img src={`https://picsum.photos/seed/${activeAgentId}/80/80`} className="w-full h-full object-cover grayscale opacity-80" />
-             </div>
+            {activeAgent && (
+              <>
+                <div className="hidden md:flex flex-col items-end mr-4">
+                  <span className="text-[9px] text-zinc-500 font-mono tracking-widest uppercase">Expertise</span>
+                  <span className="text-[10px] text-blue-400 font-bold uppercase tracking-tighter">{activeAgent.name}</span>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 overflow-hidden shadow-lg shadow-black/50">
+                  <img src={`https://picsum.photos/seed/${activeAgentId}/80/80`} className="w-full h-full object-cover grayscale opacity-80" />
+                </div>
+              </>
+            )}
           </div>
         </header>
 
         <div className="flex-1 flex flex-col overflow-hidden relative">
           <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar">
-            {activeAgent.messages.length === 0 ? (
+            {(!activeAgent || activeAgent.messages.length === 0) ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center max-w-xl mx-auto opacity-30 select-none">
                 <div className="mb-10 animate-pulse-subtle bg-blue-600/10 p-8 rounded-[2.5rem] border border-blue-500/10">
-                   <Icons.Logo />
+                  <Icons.Logo />
                 </div>
-                <h1 className="text-4xl font-light text-white mb-3 tracking-tighter">{activeAgent.name} Initialized</h1>
+                <h1 className="text-4xl font-light text-white mb-3 tracking-tighter">{activeAgent ? activeAgent.name : "System"} Initialized</h1>
                 <p className="text-sm text-zinc-400 leading-relaxed mb-12 max-w-md font-light">
-                   Expert ready for directives. {activeAgent.name} will handle specialized logic layers within your virtual team environment using <span className="text-blue-400 font-mono">{activeAgent.config.model}</span>.
+                  Expert ready for directives. {activeAgent?.name} will handle specialized logic layers within your virtual team environment.
                 </p>
                 <div className="grid grid-cols-2 gap-4 w-full">
                   {["Analyze project structure", "Setup CI/CD pipeline", "Audit security rules", "Refactor UI components"].map(t => (
@@ -365,32 +373,26 @@ const App: React.FC = () => {
                 <Icons.Brain /> Knowledge
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-hidden">
-              {activeBottomTab === 'terminal' && <Terminal />}
+              {activeBottomTab === 'terminal' && <Terminal output={terminalOutputs[activeAgentId] || ''} />}
               {activeBottomTab === 'rules' && (
                 <div className="p-8 overflow-y-auto h-full grid grid-cols-1 md:grid-cols-2 gap-4 custom-scrollbar">
-                   {rules.map(r => (
+                  {rules.map(r => (
                     <div key={r.id} className="p-5 bg-white/[0.02] rounded-3xl border border-white/5 flex items-start gap-4 group hover:border-green-500/30 transition-all">
                       <div className="p-2.5 rounded-xl bg-green-500/10 text-green-400"><Icons.Shield /></div>
                       <div className="flex-1 flex flex-col gap-1.5">
                         <p className="text-xs text-zinc-300 font-light leading-relaxed">"{r.content}"</p>
                         <span className="text-[9px] text-zinc-500 uppercase font-bold">Instruction persistent</span>
                       </div>
-                      <button 
-                        onClick={() => setRules(prev => prev.map(pr => pr.id === r.id ? {...pr, enabled: !pr.enabled} : pr))}
+                      <button
+                        onClick={() => setRules(prev => prev.map(pr => pr.id === r.id ? { ...pr, enabled: !pr.enabled } : pr))}
                         className={`w-10 h-5 rounded-full relative transition-all duration-500 ${r.enabled ? 'bg-green-600 shadow-lg shadow-green-600/20' : 'bg-zinc-800'}`}
                       >
                         <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${r.enabled ? 'left-6' : 'left-1'}`}></div>
                       </button>
                     </div>
-                   ))}
-                   <button 
-                    onClick={() => setRules(prev => [...prev, { id: `r-${Date.now()}`, content: 'New persistent behavioral constraint...', enabled: true }])}
-                    className="p-5 bg-white/[0.01] rounded-3xl border border-white/5 border-dashed flex items-center justify-center gap-3 text-[10px] text-zinc-500 uppercase tracking-widest hover:bg-white/[0.03] transition-all"
-                   >
-                      <Icons.Plus /> Define New Rule
-                   </button>
+                  ))}
                 </div>
               )}
               {activeBottomTab === 'skills' && (
@@ -399,8 +401,8 @@ const App: React.FC = () => {
                     <div key={s.id} className="p-5 bg-white/[0.02] rounded-3xl border border-white/5 flex flex-col gap-4 group hover:border-orange-500/30 transition-all">
                       <div className="flex items-center justify-between">
                         <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-400"><Icons.Zap /></div>
-                        <button 
-                          onClick={() => setSkills(prev => prev.map(sk => sk.id === s.id ? {...sk, enabled: !sk.enabled} : sk))}
+                        <button
+                          onClick={() => setSkills(prev => prev.map(sk => sk.id === s.id ? { ...sk, enabled: !sk.enabled } : sk))}
                           className={`w-10 h-5 rounded-full relative transition-all duration-500 ${s.enabled ? 'bg-orange-600 shadow-lg shadow-orange-600/20' : 'bg-zinc-800'}`}
                         >
                           <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${s.enabled ? 'left-6' : 'left-1'}`}></div>
@@ -416,7 +418,7 @@ const App: React.FC = () => {
               )}
               {activeBottomTab === 'memory' && (
                 <div className="p-8 overflow-y-auto h-full flex flex-col gap-3 custom-scrollbar">
-                   {memory.map(m => (
+                  {memory.map(m => (
                     <div key={m.id} className="p-5 bg-white/[0.02] rounded-[1.5rem] border border-white/5 flex items-center justify-between hover:bg-white/[0.04] transition-all">
                       <div className="flex items-center gap-5">
                         <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400"><Icons.Brain /></div>
@@ -426,7 +428,7 @@ const App: React.FC = () => {
                         {m.tags.map(t => <span key={t} className="text-[9px] px-2 py-0.5 bg-zinc-800 rounded-full border border-white/5 text-zinc-500 uppercase font-mono">{t}</span>)}
                       </div>
                     </div>
-                   ))}
+                  ))}
                 </div>
               )}
             </div>
@@ -446,7 +448,7 @@ const App: React.FC = () => {
             </div>
           )}
           <div className="max-w-5xl mx-auto flex items-end gap-5 relative">
-            <button 
+            <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
               className="mb-1 p-4 rounded-2xl bg-white/[0.02] hover:bg-white/[0.06] text-zinc-400 transition-all border border-white/10 active:scale-95 disabled:opacity-20"
@@ -454,17 +456,17 @@ const App: React.FC = () => {
               <Icons.Upload />
             </button>
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-            
+
             <div className="flex-1 relative group">
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                placeholder={`Directive for ${activeAgent.name}...`}
+                placeholder={`Directive for ${activeAgent ? activeAgent.name : 'System'}...`}
                 className="w-full bg-white/[0.03] border border-white/10 rounded-[1.5rem] py-5 pl-6 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40 transition-all resize-none min-h-[64px] max-h-[200px] font-sans text-sm font-light placeholder:text-zinc-600"
                 rows={1}
               />
-              <button 
+              <button
                 onClick={handleSend}
                 disabled={isTyping || !inputValue.trim() || isUploading}
                 className="absolute right-3.5 bottom-3 p-3.5 rounded-xl bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-20 disabled:grayscale transition-all shadow-xl shadow-blue-600/20 active:scale-90"
@@ -474,24 +476,24 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="mt-6 flex items-center justify-center gap-10 text-[9px] text-zinc-700 uppercase tracking-[0.3em] font-mono">
-             <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Terminal Active</span>
-             <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Virtual Team Synced</span>
-             <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span> Author: Tarek Tarabichi</span>
+            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Terminal Active</span>
+            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Virtual Team Synced</span>
+            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span> Author: Tarek Tarabichi</span>
           </div>
         </div>
       </main>
 
-      <ControlPanel 
-        toolCalls={activeAgent.toolCalls} 
-        tasks={tasks} 
-        onAddTask={(title) => setTasks(prev => [...prev, { id: Date.now().toString(), title, completed: false, createdAt: Date.now() }])} 
-        onToggleTask={(id) => setTasks(prev => prev.map(t => t.id === id ? {...t, completed: !t.completed} : t))} 
-        onDeleteTask={(id) => setTasks(prev => prev.filter(t => t.id !== id))} 
+      <ControlPanel
+        toolCalls={activeAgent?.toolCalls || []}
+        tasks={tasks}
+        onAddTask={(title) => setTasks(prev => [...prev, { id: Date.now().toString(), title, completed: false, createdAt: Date.now() }])}
+        onToggleTask={(id) => setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))}
+        onDeleteTask={(id) => setTasks(prev => prev.filter(t => t.id !== id))}
       />
 
-      <NewAgentModal 
-        isOpen={isNewAgentModalOpen} 
-        onClose={() => setIsNewAgentModalOpen(false)} 
+      <NewAgentModal
+        isOpen={isNewAgentModalOpen}
+        onClose={() => setIsNewAgentModalOpen(false)}
         onDeploy={handleDeployAgent}
       />
     </div>

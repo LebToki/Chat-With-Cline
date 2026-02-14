@@ -1,62 +1,73 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { Terminal as XTerm } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import 'xterm/css/xterm.css';
 
 interface TerminalProps {
+  output?: string;
   onExecute?: (command: string) => void;
 }
 
-const Terminal: React.FC<TerminalProps> = ({ onExecute }) => {
-  const [history, setHistory] = useState<string[]>([
-    'Cline Mission Control OS [Version 1.0.5]',
-    '(c) 2tinteractive.com. All rights reserved.',
-    '',
-    'root@cline:~$ agent --init-workspace',
-    'Initializing workspace environment...',
-    'Done. Ready for instructions.'
-  ]);
-  const [input, setInput] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
+const Terminal: React.FC<TerminalProps> = ({ output = '', onExecute }) => {
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const xtermRef = useRef<XTerm | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const processedOutputRef = useRef<number>(0);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [history]);
+    if (!terminalRef.current) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    
-    setHistory(prev => [...prev, `root@cline:~$ ${input}`]);
-    if (onExecute) onExecute(input);
-    
-    // Simulate some generic output if it's not handled
-    setTimeout(() => {
-      setHistory(prev => [...prev, `Executing: ${input}...`, 'Exit code: 0']);
-    }, 500);
-    
-    setInput('');
-  };
+    // Initialize xterm.js
+    const term = new XTerm({
+      theme: {
+        background: '#09090b', // zinc-950
+        foreground: '#e4e4e7', // zinc-200
+        cursor: '#3b82f6', // blue-500
+        selectionBackground: 'rgba(59, 130, 246, 0.3)',
+      },
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontSize: 12,
+      cursorBlink: true,
+      scrollback: 1000,
+    });
+
+    const fitAddon = new FitAddon();
+    term.loadAddon(fitAddon);
+
+    term.open(terminalRef.current);
+    fitAddon.fit();
+
+    xtermRef.current = term;
+    fitAddonRef.current = fitAddon;
+
+    term.write('\r\n\x1b[38;2;59;130;246mCLINE MISSION CONTROL v2.0\x1b[0m\r\n');
+    term.write('Waiting for agent stream...\r\n\r\n');
+
+    // Handle resizing
+    const handleResize = () => fitAddon.fit();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      term.dispose();
+    };
+  }, []);
+
+  // Update terminal content when output changes
+  useEffect(() => {
+    if (!xtermRef.current) return;
+
+    const newContent = output.slice(processedOutputRef.current);
+    if (newContent) {
+      xtermRef.current.write(newContent);
+      processedOutputRef.current = output.length;
+    }
+  }, [output]);
 
   return (
-    <div className="h-full flex flex-col bg-black/90 font-mono text-xs p-3 terminal-glow border-t border-white/5">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto mb-2 space-y-1">
-        {history.map((line, i) => (
-          <div key={i} className={line.startsWith('root@') ? 'text-blue-400' : 'text-zinc-400'}>
-            {line}
-          </div>
-        ))}
-      </div>
-      <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <span className="text-blue-500">root@cline:~$</span>
-        <input 
-          type="text" 
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="bg-transparent border-none outline-none flex-1 text-white caret-blue-500"
-          autoFocus
-        />
-      </form>
+    <div className="h-full w-full bg-[#09090b] p-4 overflow-hidden border-t border-white/5">
+      <div ref={terminalRef} className="h-full w-full" />
     </div>
   );
 };
