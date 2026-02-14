@@ -1,14 +1,27 @@
 
-# Cline Mission Control 🚀
+# Chat With Cline 🚀
+### The Ultimate Autonomous AI Command Center
 
-**Author:** Tarek Tarabichi ([2tinteractive.com](https://2tinteractive.com))
+[![Author](https://img.shields.io/badge/Author-Tarek%20Tarabichi-blue?style=for-the-badge)](https://2tinteractive.com)
+[![License](https://img.shields.io/badge/License-Branded%20Open%20Source-orange?style=for-the-badge)](#license)
 
-Welcome to the ultimate web command center for **Cline**, the autonomous AI coding agent. This dashboard provides a high-end, visual workspace to orchestrate multiple agents, manage complex file systems, and execute code via an integrated terminal.
+**Chat With Cline** is a high-performance, visually stunning web interface designed to control and orchestrate [Cline](https://docs.cline.bot), the autonomous AI coding agent. It transforms the CLI-based agent into a world-class mission control dashboard.
 
-## 🛠 Installation
+---
 
-### 1. Install Cline CLI
-Cline's core logic runs via a CLI. Follow the official documentation to install it in your local environment:
+## 🎨 Interface Preview
+> *Hyper-realistic product concept: A translucent glass-morphism terminal interface glowing with cobalt blue accents, nested within a minimalist dark-mode workspace.*
+
+- **Multi-Agent Orchestration**: Spin up dedicated agent instances for different microservices.
+- **Integrated Terminal**: Native shell execution and log monitoring.
+- **Memory & Skills Matrix**: Advanced cognitive layers for persistent project context.
+
+---
+
+## 🛠 Installation Guide
+
+### 1. Prerequisite: Cline CLI
+Before using this client, you must have the Cline CLI installed on your machine.
 ```bash
 # Via NPM
 npm install -g @cline/cli
@@ -16,32 +29,55 @@ npm install -g @cline/cli
 # Verify Installation
 cline --version
 ```
+Follow the [Official Configuration Guide](https://docs.cline.bot/cline-cli/configuration) to set up your API keys.
 
-### 2. Configure Your Environment
-Cline requires an LLM provider (Gemini, Anthropic, or OpenAI). Export your API key:
-```bash
-export CLINE_API_KEY=your_api_key_here
-```
-For more complex configurations (OpenRouter, Base URLs), refer to the [Cline Configuration Docs](https://docs.cline.bot/cline-cli/configuration).
-
-### 3. Run Mission Control (Web Client)
-If you are running this web client locally:
-1. Clone the repository.
-2. Install dependencies: `npm install`.
-3. Start the dev server: `npm run dev`.
-
-## 🧠 Capabilities
-
-- **Multi-Agent Orchestration**: Spin up dedicated agent instances for different tasks (e.g., one for UI, one for Backend) and switch between them seamlessly.
-- **Integrated Terminal**: Watch real-time command execution and interact with your local shell directly from the web interface.
-- **Advanced Skill Layer**: Toggle specialized capabilities like "Docker Orchestration", "Unit Test Generation", or "Web Scraping".
-- **Mission Persistence**: Locally stored task management to keep your project goals on track.
-- **Memory Architecture**: A local memory store that remembers user preferences, file paths, and architectural decisions across sessions.
-- **File System Mastery**: Visual explorer for your workspace and secure file upload/sharing capabilities.
-- **Provider Agnostic**: Switch between Gemini, OpenAI, and Anthropic in real-time within the settings panel.
-
-## 🔒 Security
-Cline Mission Control operates with high-key security. API keys are managed via environment variables and never stored in plain text. Multi-agent sessions are isolated to prevent cross-context pollution.
+### 2. Chat With Cline (Web Client)
+To run this dashboard locally:
+1. **Clone the Repo**:
+   ```bash
+   git clone https://github.com/2tinteractive/Chat-With-Cline.git
+   cd Chat-With-Cline
+   ```
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+3. **Configure Environment**:
+   Create a `.env` file and add your `API_KEY`.
+4. **Launch**:
+   ```bash
+   npm run dev
+   ```
 
 ---
-*Built with passion for the future of agentic workflows.*
+
+## 🧠 Capabilities & Possibilities
+
+### Core Features
+- **File Upload & Sharing**: Drag and drop project files directly into the agent's context for instant indexing.
+- **Multi-Agent Mode**: Run isolated agents for frontend, backend, and DevOps tasks simultaneously.
+- **Skills Matrix**: Enable specialized modules like *Security Auditor*, *Unit Test Generator*, or *Docker Ops*.
+- **Memory Store**: A cognitive layer that persists architectural decisions and user preferences across sessions.
+- **Integrated Terminal**: Execute `bash`, `npm`, or `python` scripts directly from the interface.
+
+---
+
+## 🤝 Community & Contributions
+We welcome the community to push the boundaries of agentic workflows! 
+
+- **Discussions**: Join us on GitHub to share your custom Skills and Agent templates.
+- **Pull Requests**: Open for performance optimizations, new provider integrations, and UI enhancements.
+- **Feedback**: Reach out via [2tinteractive.com](https://2tinteractive.com).
+
+---
+
+## 📜 License
+
+This project is released under a modified Open Source license. 
+
+**Terms:**
+1. **Usage**: You are free to use, modify, and distribute this software for personal or commercial projects.
+2. **Branding**: **Removal of author branding (Tarek Tarabichi / 2tinteractive.com) from the UI, Meta tags, or README is strictly forbidden.**
+3. **Attribution**: Credit must be maintained in all forks and derivatives.
+
+*Built by Tarek Tarabichi - 2tinteractive.com*

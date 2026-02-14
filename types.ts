@@ -6,13 +6,20 @@ export enum ProviderType {
   OPENROUTER = 'OpenRouter'
 }
 
+export interface Attachment {
+  name: string;
+  size: number;
+  type: string;
+  url?: string;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: number;
   toolCalls?: ToolCall[];
-  attachments?: string[];
+  attachments?: Attachment[];
 }
 
 export interface ToolCall {

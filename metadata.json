@@ -1,6 +1,6 @@
 {
   "name": "Chat With Cline",
-  "description": "A high-end, futuristic web-based command center for Cline, the autonomous AI coding agent, featuring model configuration, agentic workspace visualization, and real-time tool execution tracking.",
+  "description": "The ultimate autonomous AI command center for Cline. Orchestrate multiple agents, execute terminal commands, and manage workspace skills in a high-end mission control dashboard by Tarek Tarabichi.",
   "requestFramePermissions": [
     "camera",
     "microphone"
