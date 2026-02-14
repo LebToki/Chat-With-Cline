@@ -1,9 +1,17 @@
 
 export enum ProviderType {
-  GEMINI = 'Gemini',
+  GEMINI = 'Google AI Studio',
   ANTHROPIC = 'Anthropic',
   OPENAI = 'OpenAI',
-  OPENROUTER = 'OpenRouter'
+  OPENROUTER = 'OpenRouter',
+  OLLAMA = 'Ollama (Local)',
+  LMSTUDIO = 'LM Studio (Local)'
+}
+
+export interface Rule {
+  id: string;
+  content: string;
+  enabled: boolean;
 }
 
 export interface Attachment {
@@ -51,6 +59,14 @@ export interface AgentInstance {
   status: ClineStatus;
   messages: Message[];
   toolCalls: ToolCall[];
+  config: AgentConfig;
+}
+
+export interface AgentConfig {
+  provider: ProviderType;
+  model: string;
+  baseUrl?: string;
+  temperature: number;
 }
 
 export interface Skill {
@@ -58,6 +74,7 @@ export interface Skill {
   name: string;
   description: string;
   enabled: boolean;
+  code?: string; // Simulated custom skill logic
 }
 
 export interface MemoryEntry {

@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Message, ToolCall } from "../types";
+import { Message, ToolCall, AgentConfig } from "../types";
 
 const CLINE_SYSTEM_PROMPT = `
 You are Cline, a highly advanced autonomous AI coding agent. 
@@ -27,19 +27,24 @@ export class GeminiAgent {
     this.ai = new GoogleGenAI({ apiKey });
   }
 
-  async generateResponse(messages: Message[], onChunk: (chunk: string) => void): Promise<string> {
+  async generateResponse(
+    messages: Message[], 
+    config: AgentConfig,
+    onChunk: (chunk: string) => void
+  ): Promise<string> {
     try {
       const chatMessages = messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
 
+      // Use the model and temperature from the agent's unique configuration
       const stream = await this.ai.models.generateContentStream({
-        model: 'gemini-2.5-flash-lite-latest',
+        model: config.model || 'gemini-2.5-flash-lite-latest',
         contents: chatMessages,
         config: {
           systemInstruction: CLINE_SYSTEM_PROMPT,
-          temperature: 0.1,
+          temperature: config.temperature ?? 0.1,
         }
       });
 
@@ -59,8 +64,6 @@ export class GeminiAgent {
 
   // Helper to extract tool calls from text (Cline format)
   parseToolCalls(text: string): ToolCall[] {
-    // In a real app, we'd use JSON responseSchema or better parsing.
-    // For this prototype, we simulate structured output.
     const tools: ToolCall[] = [];
     const toolRegex = /<tool_call>([\s\S]*?)<\/tool_call>/g;
     let match;

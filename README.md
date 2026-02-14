@@ -1,83 +1,67 @@
 
-# Chat With Cline 🚀
-### The Ultimate Autonomous AI Command Center
+# Chat With Cline | Mission Control 🚀
+### The Definitive Web Dashboard for Autonomous Agent Orchestration
 
 [![Author](https://img.shields.io/badge/Author-Tarek%20Tarabichi-blue?style=for-the-badge)](https://2tinteractive.com)
-[![License](https://img.shields.io/badge/License-Branded%20Open%20Source-orange?style=for-the-badge)](#license)
+[![Version](https://img.shields.io/badge/Version-1.2.0-blue?style=for-the-badge)](#)
 
-**Chat With Cline** is a high-performance, visually stunning web interface designed to control and orchestrate [Cline](https://docs.cline.bot), the autonomous AI coding agent. It transforms the CLI-based agent into a world-class mission control dashboard.
-
----
-
-## 🎨 Interface Preview
-> *Hyper-realistic product concept: A translucent glass-morphism terminal interface glowing with cobalt blue accents, nested within a minimalist dark-mode workspace.*
-
-- **Multi-Agent Orchestration**: Spin up dedicated agent instances for different microservices.
-- **Integrated Terminal**: Native shell execution and log monitoring.
-- **Memory & Skills Matrix**: Advanced cognitive layers for persistent project context.
+**Chat With Cline** is a world-class command center designed for the [Cline CLI](https://docs.cline.bot). It transitions raw terminal agentic logic into a high-end visual dashboard, enabling you to build and manage your own **Virtual AI Team**.
 
 ---
 
-## 🛠 Installation Guide
-
-### 1. Prerequisite: Cline CLI
-Before using this client, you must have the Cline CLI installed on your machine.
-```bash
-# Via NPM
-npm install -g @cline/cli
-
-# Verify Installation
-cline --version
-```
-Follow the [Official Configuration Guide](https://docs.cline.bot/cline-cli/configuration) to set up your API keys.
-
-### 2. Chat With Cline (Web Client)
-To run this dashboard locally:
-1. **Clone the Repo**:
-   ```bash
-   git clone https://github.com/2tinteractive/Chat-With-Cline.git
-   cd Chat-With-Cline
-   ```
-2. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
-3. **Configure Environment**:
-   Create a `.env` file and add your `API_KEY`.
-4. **Launch**:
-   ```bash
-   npm run dev
-   ```
+## 🎨 Design Philosophy
+Developed as a "Tactical Command Center", this dashboard emphasizes architectural clarity and the ability to deploy specialized "Expert Instances" for complex software projects.
 
 ---
 
-## 🧠 Capabilities & Possibilities
+## 🛠 Features (v1.2.0 - Advanced Team Builder)
 
-### Core Features
-- **File Upload & Sharing**: Drag and drop project files directly into the agent's context for instant indexing.
-- **Multi-Agent Mode**: Run isolated agents for frontend, backend, and DevOps tasks simultaneously.
-- **Skills Matrix**: Enable specialized modules like *Security Auditor*, *Unit Test Generator*, or *Docker Ops*.
-- **Memory Store**: A cognitive layer that persists architectural decisions and user preferences across sessions.
-- **Integrated Terminal**: Execute `bash`, `npm`, or `python` scripts directly from the interface.
+### 1. Virtual Team Orchestration
+- **Expert Configuration**: Deploy specialized roles (e.g., "Frontend Architect", "Security Auditor") using a robust deployment form. Configure Provider, Model, Temperature, and Base URLs individually.
+- **Expert Renaming**: Double-click any agent tab to rename roles on the fly.
+- **Multi-Agent Persistence**: Your entire team, their message history, and their specialized configurations are automatically saved to `localStorage`. Refresh without losing your "Neural Employees".
+
+### 2. Status Telemetry & Real-time Monitoring
+- **Visual Indicators**: Dynamic headers featuring specialized status dots:
+  - 🟢 **Online**: Ready for directives.
+  - 🔵 **Busy (Pulsing)**: Neural processing in progress.
+  - 🔴 **Error (Flashing)**: System failure or API blockage.
+  - 🔘 **Offline**: Internal disconnect.
+
+### 3. Tactical Cognitive Layers
+- **Rules Tab**: Define persistent behavioral constraints across your project.
+- **Skills Matrix**: Enable or disable specialized capabilities like *Scraping*, *DevOps*, and *Unit Testing*.
+- **Integrated Terminal**: Execute and monitor commands directly from the dashboard.
 
 ---
 
-## 🤝 Community & Contributions
-We welcome the community to push the boundaries of agentic workflows! 
+## 📜 Usage & Persistence
 
-- **Discussions**: Join us on GitHub to share your custom Skills and Agent templates.
-- **Pull Requests**: Open for performance optimizations, new provider integrations, and UI enhancements.
-- **Feedback**: Reach out via [2tinteractive.com](https://2tinteractive.com).
+The "Chat With Cline" interface is built for longevity. All configurations, including:
+- **Agents & Their Roles**
+- **Project Rules**
+- **Task Lists**
+- **Active Skills**
+
+Are persisted locally. This allows you to build a complex project structure and return to it exactly where you left off, with your specialized virtual team ready to execute.
 
 ---
 
-## 📜 License
+## 📜 Installation
 
-This project is released under a modified Open Source license. 
+1. **Prerequisite**: Ensure the [Cline CLI](https://docs.cline.bot/cline-cli/installation) is installed globally.
+2. **Key Config**: Export your provider keys (e.g., `CLINE_API_KEY`).
+3. **Local Providers**: Full support for `Ollama` and `LM Studio` via the tactical deployment matrix.
 
-**Terms:**
-1. **Usage**: You are free to use, modify, and distribute this software for personal or commercial projects.
-2. **Branding**: **Removal of author branding (Tarek Tarabichi / 2tinteractive.com) from the UI, Meta tags, or README is strictly forbidden.**
-3. **Attribution**: Credit must be maintained in all forks and derivatives.
+---
 
-*Built by Tarek Tarabichi - 2tinteractive.com*
+## 🔒 License & Copyright
+
+Copyright © 2025 Tarek Tarabichi (2tinteractive.com).
+
+**Branded Open Source Terms:**
+- You may use, modify, and fork this repository.
+- **Strictly Prohibited**: Removal of "Tarek Tarabichi" or "2tinteractive.com" branding from the UI headers, meta-tags, or manifest files.
+- Contributions are welcome through PRs.
+
+*Elevate your workflow. Orchestrate your team.*
