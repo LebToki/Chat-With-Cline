@@ -1,0 +1,8 @@
+{
+  "name": "Chat With Cline",
+  "description": "A high-end, futuristic web-based command center for Cline, the autonomous AI coding agent, featuring model configuration, agentic workspace visualization, and real-time tool execution tracking.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
