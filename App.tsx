@@ -187,10 +187,7 @@ const App: React.FC = () => {
       setIsUploading(true);
       setUploadProgress(0);
 
-      for (let i = 0; i <= 100; i += 25) {
-        setUploadProgress(i);
-        await new Promise(r => setTimeout(r, 100));
-      }
+      setUploadProgress(100);
 
       const attachment: Attachment = { name: file.name, size: file.size, type: file.type };
       const userMsg: Message = {
