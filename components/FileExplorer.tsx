@@ -32,7 +32,7 @@ const FileItem: React.FC<{ item: WorkspaceFile; depth: number }> = ({ item, dept
   return (
     <div>
       <div 
-        className="flex items-center py-1.5 px-3 hover:bg-white/5 cursor-pointer rounded-md text-sm text-zinc-400 group transition-colors"
+        className="flex items-center py-1.5 px-3 hover:bg-blue-500/10 hover:text-blue-400 group relative before:absolute before:inset-y-0 before:left-0 before:w-0.5 hover:before:bg-blue-500 transition-colors cursor-pointer rounded-md text-sm text-zinc-400"
         style={{ paddingLeft: `${depth * 12 + 12}px` }}
         onClick={() => item.type === 'directory' && setIsOpen(!isOpen)}
       >
@@ -51,7 +51,7 @@ const FileItem: React.FC<{ item: WorkspaceFile; depth: number }> = ({ item, dept
 const FileExplorer: React.FC = () => {
   return (
     <div className="w-64 glass-panel border-r border-white/5 flex flex-col hidden lg:flex">
-      <div className="p-4 border-b border-white/5 flex items-center justify-between">
+      <div className="p-3 border-b border-white/10 bg-zinc-900/50 flex items-center justify-between">
         <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Explorer</h2>
         <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">AGENT_ROOT</span>
       </div>

@@ -6,28 +6,13 @@ import ControlPanel from './components/ControlPanel';
 import Terminal from './components/Terminal';
 import NewAgentModal from './components/NewAgentModal';
 import { Icons } from './constants';
+import { useAgents } from './hooks/useAgents';
 import { Message, ProviderType, Task, ClineStatus, AgentInstance, Skill, MemoryEntry, Attachment, Rule, AgentConfig } from './types';
 import { socketService } from './services/socketService';
 
 const App: React.FC = () => {
   // Global App State - Initializing from LocalStorage for persistence
-  const [agents, setAgents] = useState<AgentInstance[]>(() => {
-    const saved = localStorage.getItem('cline_agents');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Reset volatile status to online on load
-        return parsed.map((a: AgentInstance) => ({ ...a, status: 'online' }));
-      } catch (e) {
-        console.error("Failed to load agents", e);
-      }
-    }
-    return [];
-  });
-
-  const [activeAgentId, setActiveAgentId] = useState<string>(() => {
-    return localStorage.getItem('cline_active_agent_id') || '';
-  });
+  const { agents, setAgents, activeAgentId, setActiveAgentId, tasks, setTasks, rules, setRules, skills, setSkills } = useAgents();
 
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
@@ -40,29 +25,6 @@ const App: React.FC = () => {
   const [activeBottomTab, setActiveBottomTab] = useState<'terminal' | 'memory' | 'skills' | 'rules'>('terminal');
 
   // Persistence states
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    const saved = localStorage.getItem('cline_tasks');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [rules, setRules] = useState<Rule[]>(() => {
-    const saved = localStorage.getItem('cline_rules');
-    return saved ? JSON.parse(saved) : [
-      { id: 'r1', content: 'Always use TypeScript for new files.', enabled: true },
-      { id: 'r2', content: 'Prefix git commits with chore:, feat: or fix:.', enabled: false },
-      { id: 'r3', content: 'Explain code changes before writing them.', enabled: true }
-    ];
-  });
-
-  const [skills, setSkills] = useState<Skill[]>(() => {
-    const saved = localStorage.getItem('cline_skills');
-    return saved ? JSON.parse(saved) : [
-      { id: 's1', name: 'Web Scraping', description: 'Advanced DOM extraction.', enabled: true },
-      { id: 's2', name: 'Docker Orchestrator', description: 'Manage local containers.', enabled: false },
-      { id: 's3', name: 'Unit Test Suite', description: 'Auto-generate Vitest suites.', enabled: true }
-    ];
-  });
-
   const [memory] = useState<MemoryEntry[]>([
     { id: 'm1', content: 'User prefers Tailwind CSS.', tags: ['ui'], timestamp: Date.now() },
     { id: 'm2', content: 'Project root is /workspace.', tags: ['infra'], timestamp: Date.now() }
@@ -77,27 +39,6 @@ const App: React.FC = () => {
   const activeAgent = useMemo(() =>
     agents.find(a => a.id === activeAgentId) || agents[0]
     , [agents, activeAgentId]);
-
-  // Persistence Sync
-  useEffect(() => {
-    localStorage.setItem('cline_agents', JSON.stringify(agents));
-  }, [agents]);
-
-  useEffect(() => {
-    localStorage.setItem('cline_active_agent_id', activeAgentId);
-  }, [activeAgentId]);
-
-  useEffect(() => {
-    localStorage.setItem('cline_tasks', JSON.stringify(tasks));
-  }, [tasks]);
-
-  useEffect(() => {
-    localStorage.setItem('cline_rules', JSON.stringify(rules));
-  }, [rules]);
-
-  useEffect(() => {
-    localStorage.setItem('cline_skills', JSON.stringify(skills));
-  }, [skills]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -255,14 +196,14 @@ const App: React.FC = () => {
       <FileExplorer />
 
       <main className="flex-1 flex flex-col min-w-0 bg-zinc-900/10 border-r border-white/5">
-        <header className="h-14 flex items-center justify-between px-6 border-b border-white/5 glass-panel shrink-0 z-20">
+        <header className="h-16 flex items-center justify-between px-6 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl shrink-0 z-20">
           <div className="flex items-center gap-4 overflow-x-auto no-scrollbar max-w-[70%] pr-4">
             <Icons.Logo />
             <div className="h-6 w-[1px] bg-white/10 mx-2"></div>
             {agents.map(agent => (
               <div
                 key={agent.id}
-                className={`group relative px-3 py-1.5 rounded-xl text-[11px] font-mono border transition-all whitespace-nowrap flex items-center gap-2.5 ${activeAgentId === agent.id ? 'bg-blue-600/10 border-blue-500/40 text-blue-400' : 'bg-transparent border-transparent text-zinc-500 hover:bg-white/5 cursor-pointer'}`}
+                className={`group relative px-3 py-1.5 rounded-lg border transition-all duration-300 text-[11px] font-mono whitespace-nowrap flex items-center gap-2.5 hover:bg-white/10 ${activeAgentId === agent.id ? 'bg-blue-500/15 border-blue-500/50 text-blue-400' : 'bg-transparent border-transparent text-zinc-400 cursor-pointer'}`}
                 onClick={() => activeAgentId !== agent.id && setActiveAgentId(agent.id)}
               >
                 <span className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${getStatusColor(agent.status)}`}></span>
@@ -435,7 +376,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-8 border-t border-white/5 glass-panel bg-black/20 shrink-0">
+        <div className="p-6 border-t border-white/10 bg-zinc-950/80 backdrop-blur-xl shrink-0">
           {isUploading && (
             <div className="max-w-5xl mx-auto mb-6">
               <div className="flex justify-between text-[10px] text-blue-400 font-mono uppercase tracking-[0.2em] mb-2 px-1">
@@ -463,7 +404,7 @@ const App: React.FC = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
                 placeholder={`Directive for ${activeAgent ? activeAgent.name : 'System'}...`}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-[1.5rem] py-5 pl-6 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40 transition-all resize-none min-h-[64px] max-h-[200px] font-sans text-sm font-light placeholder:text-zinc-600"
+                className="w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-inner py-5 pl-6 pr-20 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all resize-none min-h-[64px] max-h-[200px] font-sans text-sm font-light placeholder:text-zinc-600"
                 rows={1}
               />
               <button
