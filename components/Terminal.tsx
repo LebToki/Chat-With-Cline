@@ -66,8 +66,14 @@ const Terminal: React.FC<TerminalProps> = ({ output = '', onExecute }) => {
   }, [output]);
 
   return (
-    <div className="h-full w-full bg-[#09090b] p-4 overflow-hidden border-t border-white/5">
-      <div ref={terminalRef} className="h-full w-full" />
+    <div className="relative flex flex-col h-full w-full bg-[#09090b] overflow-hidden border-t border-white/5">
+      <div className="h-8 border-b border-white/10 flex items-center justify-between px-3 bg-zinc-900/50">
+        <span className="text-[10px] text-zinc-500 font-mono">Terminal Output</span>
+        <button onClick={() => { xtermRef.current?.clear(); processedOutputRef.current = output.length; }} className="text-zinc-500 hover:text-white text-[10px] font-mono uppercase">Clear</button>
+      </div>
+      <div className="flex-1 relative p-2">
+        <div ref={terminalRef} className="h-full w-full" />
+      </div>
     </div>
   );
 };

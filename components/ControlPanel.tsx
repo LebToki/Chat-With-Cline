@@ -50,12 +50,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           />
         </form>
 
-        <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+        <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-2 space-y-1">
           {tasks.length === 0 ? (
             <div className="text-[11px] text-zinc-600 italic py-2 text-center">No active objectives defined.</div>
           ) : (
             tasks.map(task => (
-              <div key={task.id} className="group flex items-center gap-2 text-xs bg-white/[0.02] border border-white/5 p-2 rounded-lg hover:border-white/10 transition-colors">
+              <div key={task.id} className="group flex items-center gap-2 text-xs border border-white/5 hover:border-blue-500/30 transition-all duration-200 bg-zinc-900/40 rounded-lg p-2.5">
                 <button 
                   onClick={() => onToggleTask(task.id)}
                   className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${task.completed ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}
@@ -81,14 +81,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Agent Activity</h2>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-2">
         {toolCalls.length === 0 ? (
           <div className="text-zinc-600 text-sm italic text-center mt-8">
             No active processes...
           </div>
         ) : (
           toolCalls.slice().reverse().map(call => (
-            <div key={call.id} className="bg-white/[0.03] border border-white/5 rounded-lg p-3 text-sm">
+            <div key={call.id} className="bg-zinc-900/50 border border-white/5 rounded-lg p-3 hover:border-white/20 transition-all text-sm">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-mono text-blue-400 text-xs">{call.name}</span>
                 <span className={`text-[10px] px-1.5 rounded uppercase ${
