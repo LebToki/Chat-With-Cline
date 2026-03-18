@@ -33,12 +33,26 @@ export class AgentManager {
     
     // In a real implementation, we would pass specific flags.
     // For now, we start the shell and then send the 'cline' command.
+    // Sanitize environment variables to prevent exposing sensitive information
+    const sanitizedEnv = {
+      PATH: process.env.PATH,
+      TERM: 'xterm-256color',
+      LANG: process.env.LANG || 'en_US.UTF-8',
+      HOME: process.env.HOME,
+      // Windows specific variables
+      SystemRoot: process.env.SystemRoot,
+      SystemDrive: process.env.SystemDrive,
+      USERNAME: process.env.USERNAME,
+      USERPROFILE: process.env.USERPROFILE,
+      // Add other necessary but safe variables here
+    };
+
     const ptyProcess = pty.spawn(shell, [], {
       name: 'xterm-color',
       cols: 80,
       rows: 30,
       cwd: agentDir,
-      env: process.env
+      env: sanitizedEnv
     });
 
     ptyProcess.onData((data) => {
