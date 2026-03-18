@@ -37,7 +37,8 @@ app.post('/api/agent', async (req, res) => {
     const agentId = await agentManager.createAgent(name, config);
     res.json({ success: true, agentId });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Error creating agent:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -52,7 +53,8 @@ app.post('/api/chat', async (req, res) => {
     await agentManager.sendMessage(agentId, message);
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Error sending message:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
