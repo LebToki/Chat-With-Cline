@@ -54,8 +54,6 @@ export class AgentManager {
       createdAt: Date.now()
     });
 
-    console.log(`Agent ${agentId} created.`);
-    
     // Start Cline immediately
     // If we want JSON mode, we'd use: ptyProcess.write('cline --json\r');
     // But for the "Mission Control" visual terminal, standard output is fine for now.
