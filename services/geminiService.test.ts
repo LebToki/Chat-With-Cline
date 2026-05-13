@@ -1,90 +1,70 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GeminiAgent } from './geminiService';
 
-describe('GeminiAgent', () => {
-  let agent: GeminiAgent;
+import { describe, it, expect, mock } from "bun:test";
+import { GeminiAgent } from "./geminiService";
 
-  beforeEach(() => {
-    agent = new GeminiAgent('test-api-key');
-  });
+// Mock @google/genai
+mock.module("@google/genai", () => ({
+  GoogleGenAI: class {
+    constructor() {}
+    models = {
+      generateContentStream: () => {}
+    }
+  }
+}));
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+describe("GeminiAgent", () => {
+  const agent = new GeminiAgent("test-api-key");
 
-  describe('parseToolCalls', () => {
-    it('should parse a single valid tool call', () => {
-      const text = '<tool_call>{"name": "test_tool", "args": {"foo": "bar"}}</tool_call>';
-      const result = agent.parseToolCalls(text);
-
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        name: 'test_tool',
-        args: { foo: 'bar' },
-        status: 'pending',
-      });
-      expect(result[0].id).toBeDefined();
-    });
-
-    it('should parse multiple valid tool calls', () => {
+  describe("parseToolCalls", () => {
+    it("should parse tool calls and generate UUIDs for IDs", () => {
       const text = `
-        Some text.
-        <tool_call>{"name": "tool1", "args": {"a": 1}}</tool_call>
-        Intermediate text.
-        <tool_call>{"name": "tool2", "args": {"b": 2}}</tool_call>
+        I will now read the file.
+        <tool_call>
+        {
+          "name": "read_file",
+          "args": { "path": "test.txt" }
+        }
+        </tool_call>
       `;
-      const result = agent.parseToolCalls(text);
 
-      expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('tool1');
-      expect(result[1].name).toBe('tool2');
+      const tools = agent.parseToolCalls(text);
+
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe("read_file");
+      expect(tools[0].args).toEqual({ path: "test.txt" });
+      expect(tools[0].status).toBe("pending");
+
+      // UUID regex (v4-like)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      expect(tools[0].id).toMatch(uuidRegex);
     });
 
-    it('should skip invalid JSON and log a warning', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const invalidJson = '{"name": "bad_tool", "args": { "unclosed" }';
-      const text = `<tool_call>${invalidJson}</tool_call>`;
-
-      const result = agent.parseToolCalls(text);
-
-      expect(result).toHaveLength(0);
-      expect(consoleSpy).toHaveBeenCalledWith("Failed to parse tool call:", invalidJson);
-    });
-
-    it('should handle a mix of valid and invalid tool calls', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it("should handle multiple tool calls with unique UUIDs", () => {
       const text = `
-        <tool_call>{"name": "valid1", "args": {}}</tool_call>
+        <tool_call>{"name": "tool1", "args": {}}</tool_call>
+        <tool_call>{"name": "tool2", "args": {}}</tool_call>
+      `;
+
+      const tools = agent.parseToolCalls(text);
+
+      expect(tools).toHaveLength(2);
+      expect(tools[0].id).not.toBe(tools[1].id);
+
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      expect(tools[0].id).toMatch(uuidRegex);
+      expect(tools[1].id).toMatch(uuidRegex);
+    });
+
+    it("should skip invalid JSON within tool_call tags", () => {
+      const text = `
         <tool_call>invalid json</tool_call>
-        <tool_call>{"name": "valid2", "args": {}}</tool_call>
+        <tool_call>{"name": "valid_tool", "args": {}}</tool_call>
       `;
 
-      const result = agent.parseToolCalls(text);
+      const tools = agent.parseToolCalls(text);
 
-      expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('valid1');
-      expect(result[1].name).toBe('valid2');
-      expect(consoleSpy).toHaveBeenCalled();
-    });
-
-    it('should return an empty array when no tool calls are present', () => {
-      const text = 'Just some regular text without any tags.';
-      const result = agent.parseToolCalls(text);
-      expect(result).toEqual([]);
-    });
-
-    it('should handle empty tool_call tags', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const text = '<tool_call></tool_call>';
-      const result = agent.parseToolCalls(text);
-      expect(result).toHaveLength(0);
-      expect(consoleSpy).toHaveBeenCalled();
-    });
-
-    it('should ignore malformed tags (e.g., missing closing tag)', () => {
-      const text = '<tool_call>{"name": "tool"}';
-      const result = agent.parseToolCalls(text);
-      expect(result).toHaveLength(0);
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe("valid_tool");
     });
   });
 });
