@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { Message, ToolCall, AgentConfig } from "../types";
 
 const CLINE_SYSTEM_PROMPT = `
