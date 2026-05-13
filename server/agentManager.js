@@ -78,11 +78,16 @@ export class AgentManager {
   }
 
   listAgents() {
-    return Array.from(this.agents.values()).map(a => ({
-      id: a.id,
-      name: a.name,
-      status: 'active' 
-    }));
+    const result = new Array(this.agents.size);
+    let i = 0;
+    for (const a of this.agents.values()) {
+      result[i++] = {
+        id: a.id,
+        name: a.name,
+        status: 'active'
+      };
+    }
+    return result;
   }
 
   async sendMessage(agentId, message) {
