@@ -71,7 +71,7 @@ export class GeminiAgent {
       try {
         const parsed = JSON.parse(match[1]);
         tools.push({
-          id: Math.random().toString(36).substr(2, 9),
+          id: crypto.randomUUID(),
           name: parsed.name,
           args: parsed.args,
           status: 'pending'
